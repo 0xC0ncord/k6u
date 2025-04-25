@@ -145,155 +145,7 @@ async fn run() -> Result<()> {
     let resource = ApiResource::from_gvk_with_plural(&gvk, "ciliumcidrgroups");
     let cidr_api: Api<DynamicObject> = Api::all_with(client.clone(), &resource);
 
-    // This is our main update task.
-    let try_update = async || -> Result<()> {
-        // Find all IP6UpdateConfigs, give up if not only one.
-        let update_configs = config_api.list(&ListParams::default()).await?;
-        if update_configs.items.len() > 1 {
-            return Err(anyhow!(
-                "More than one IP6UpdateConfig found, cannot continue!"
-            ));
-        } else if update_configs.items.is_empty() {
-            return Err(anyhow!("No IP6UpdateConfigs found."));
-        }
-        let config = update_configs.items.first().unwrap();
-
-        // Now find our node config, and get the delegated prefix combining these configs.
-        let node_config = get_node_config(&client, &node_labels).await?;
-        let delegated_prefix = ip6::get_global_ipv6_prefix_from_interface(
-            &node_config.spec.interface,
-            config.spec.delegated_prefix_length,
-        )?;
-
-        // Get all of the CiliumCIDRGroups we need to update, making sure we aren't targeting
-        // any duplicates.
-        let groups = &config.spec.get_validated_mapped_groups()?;
-
-        for (group, prefixes) in groups {
-            // Get the prefixes for this group.
-            let new_prefixes: HashSet<String> = prefixes
-                .iter()
-                .map(|p| {
-                    format!(
-                        "{}/{}",
-                        std::net::Ipv6Addr::from_bits(
-                            delegated_prefix.to_bits() + (1u128 << SUBPREFIX_SIZE) * (*p as u128)
-                        ),
-                        SUBPREFIX_SIZE
-                    )
-                })
-                .collect();
-
-            log::debug!("Identified CIDRs to apply: {:?}", new_prefixes);
-
-            // Get existing CIDRs in the CiliumCIDRGroup.
-            let cidr_group = cidr_api.get(group).await?;
-            let existing_cidrs: HashSet<String> = cidr_group
-                .data
-                .get("spec")
-                .unwrap()
-                .get("externalCIDRs")
-                .unwrap()
-                .as_array()
-                .map(|arr| {
-                    arr.iter()
-                        .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                        .collect()
-                })
-                .unwrap();
-
-            log::debug!("Existing CIDRs to possibly overwrite: {:?}", existing_cidrs);
-
-            if existing_cidrs == new_prefixes {
-                // No need to update.
-                continue;
-            } else {
-                let patch = Patch::Merge(serde_json::json!({
-                    "spec": {
-                        "externalCIDRs": new_prefixes
-                    }
-                }));
-
-                log::debug!("Patching CiliumCIDRGroup {}", group);
-
-                // Patch it and update the status accordingly.
-                let status: IP6UpdateCondition = match cidr_api
-                    .patch(&cidr_group.name_any(), &PatchParams::default(), &patch)
-                    .await
-                {
-                    Ok(_) => {
-                        log::info!("Patching CiliumCIDRGroup {group} completed successfully.");
-                        IP6UpdateCondition {
-                            last_transition_time: Time(chrono::Utc::now()),
-                            message: format!(
-                                "Updated IPv6 address in {} from {:?} to {:?}",
-                                group, existing_cidrs, new_prefixes,
-                            ),
-                            reason: "UpdateSucceeded".to_string(),
-                            status: ConditionStatus::True,
-                            type_: "Ready".to_string(),
-                        }
-                    }
-                    Err(e) => {
-                        log::info!("Failed to patch CiliumCIDRGroup {group}.");
-                        IP6UpdateCondition {
-                            last_transition_time: Time(chrono::Utc::now()),
-                            message: format!(
-                                "Failed to update IPv6 address in {} from {:?} to {:?}: {}",
-                                group, existing_cidrs, new_prefixes, e,
-                            ),
-                            reason: "UpdateFailed".to_string(),
-                            status: ConditionStatus::False,
-                            type_: "Failed".to_string(),
-                        }
-                    }
-                };
-
-                // Prepare the status by only keeping the last 3 of each condition type, sorted by
-                // newest to oldest.
-                let ip6_api: Api<IP6UpdateConfig> = Api::all(client.clone());
-                let mut object = ip6_api.get_status(&config.name_any()).await?;
-                let mut conditions = object
-                    .status
-                    .as_ref()
-                    .map(|s| s.conditions.clone())
-                    .unwrap_or_default();
-                conditions.push(status);
-
-                let mut grouped: BTreeMap<String, Vec<IP6UpdateCondition>> = BTreeMap::new();
-                for cond in conditions {
-                    grouped.entry(cond.type_.clone()).or_default().push(cond);
-                }
-
-                let mut trimmed: Vec<IP6UpdateCondition> = grouped
-                    .into_iter()
-                    .flat_map(|(_, mut group)| {
-                        group.sort_by(|a, b| b.last_transition_time.cmp(&a.last_transition_time));
-                        group.truncate(CONDITION_TYPES_KEEP_HISTORY);
-                        group
-                    })
-                    .collect();
-
-                trimmed.sort_by(|a, b| b.last_transition_time.cmp(&a.last_transition_time));
-
-                object.status = Some(IP6UpdateStatus {
-                    conditions: trimmed,
-                });
-
-                // Patch the status.
-                ip6_api
-                    .replace_status(
-                        &config.name_any(),
-                        &Default::default(),
-                        serde_json::to_vec(&object)?,
-                    )
-                    .await?;
-            }
-        }
-
-        Ok(())
-    };
-
+    // Now start running.
     loop {
         tokio::select! {
             // Shut down if we received a signal.
@@ -309,7 +161,12 @@ async fn run() -> Result<()> {
                         // We are the leader, try and update.
                         is_leader.store(ll.acquired_lease, Ordering::Relaxed);
                         if is_leader.load(Ordering::Relaxed) {
-                            if let Err(e) = try_update().await {
+                            if let Err(e) = try_update_ipv6_prefixes(
+                                &client,
+                                &config_api,
+                                &cidr_api,
+                                &node_labels,
+                            ).await {
                                 log::error!("{}", e);
                             }
                         }
@@ -319,6 +176,159 @@ async fn run() -> Result<()> {
                     }
                 }
             },
+        }
+    }
+
+    Ok(())
+}
+
+async fn try_update_ipv6_prefixes(
+    client: &Client,
+    config_api: &Api<IP6UpdateConfig>,
+    cidr_api: &Api<DynamicObject>,
+    node_labels: &BTreeMap<String, String>,
+) -> Result<()> {
+    // Find all IP6UpdateConfigs, give up if not only one.
+    let update_configs = config_api.list(&ListParams::default()).await?;
+    if update_configs.items.len() > 1 {
+        return Err(anyhow!(
+            "More than one IP6UpdateConfig found, cannot continue!"
+        ));
+    } else if update_configs.items.is_empty() {
+        return Err(anyhow!("No IP6UpdateConfigs found."));
+    }
+    let config = update_configs.items.first().unwrap();
+
+    // Now find our node config, and get the delegated prefix combining these configs.
+    let node_config = get_node_config(client, node_labels).await?;
+    let delegated_prefix = ip6::get_global_ipv6_prefix_from_interface(
+        &node_config.spec.interface,
+        config.spec.delegated_prefix_length,
+    )?;
+
+    // Get all of the CiliumCIDRGroups we need to update, making sure we aren't targeting
+    // any duplicates.
+    let groups = &config.spec.get_validated_mapped_groups()?;
+
+    for (group, prefixes) in groups {
+        // Get the prefixes for this group.
+        let new_prefixes: HashSet<String> = prefixes
+            .iter()
+            .map(|p| {
+                format!(
+                    "{}/{}",
+                    std::net::Ipv6Addr::from_bits(
+                        delegated_prefix.to_bits() + (1u128 << SUBPREFIX_SIZE) * (*p as u128)
+                    ),
+                    SUBPREFIX_SIZE
+                )
+            })
+            .collect();
+
+        log::debug!("Identified CIDRs to apply: {:?}", new_prefixes);
+
+        // Get existing CIDRs in the CiliumCIDRGroup.
+        let cidr_group = cidr_api.get(group).await?;
+        let existing_cidrs: HashSet<String> = cidr_group
+            .data
+            .get("spec")
+            .unwrap()
+            .get("externalCIDRs")
+            .unwrap()
+            .as_array()
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                    .collect()
+            })
+            .unwrap();
+
+        log::debug!("Existing CIDRs to possibly overwrite: {:?}", existing_cidrs);
+
+        if existing_cidrs == new_prefixes {
+            // No need to update.
+            continue;
+        } else {
+            let patch = Patch::Merge(serde_json::json!({
+                "spec": {
+                    "externalCIDRs": new_prefixes
+                }
+            }));
+
+            log::debug!("Patching CiliumCIDRGroup {}", group);
+
+            // Patch it and update the status accordingly.
+            let status: IP6UpdateCondition = match cidr_api
+                .patch(&cidr_group.name_any(), &PatchParams::default(), &patch)
+                .await
+            {
+                Ok(_) => {
+                    log::info!("Patching CiliumCIDRGroup {group} completed successfully.");
+                    IP6UpdateCondition {
+                        last_transition_time: Time(chrono::Utc::now()),
+                        message: format!(
+                            "Updated IPv6 address in {} from {:?} to {:?}",
+                            group, existing_cidrs, new_prefixes,
+                        ),
+                        reason: "UpdateSucceeded".to_string(),
+                        status: ConditionStatus::True,
+                        type_: "Ready".to_string(),
+                    }
+                }
+                Err(e) => {
+                    log::info!("Failed to patch CiliumCIDRGroup {group}.");
+                    IP6UpdateCondition {
+                        last_transition_time: Time(chrono::Utc::now()),
+                        message: format!(
+                            "Failed to update IPv6 address in {} from {:?} to {:?}: {}",
+                            group, existing_cidrs, new_prefixes, e,
+                        ),
+                        reason: "UpdateFailed".to_string(),
+                        status: ConditionStatus::False,
+                        type_: "Failed".to_string(),
+                    }
+                }
+            };
+
+            // Prepare the status by only keeping the last 3 of each condition type, sorted by
+            // newest to oldest.
+            let ip6_api: Api<IP6UpdateConfig> = Api::all(client.clone());
+            let mut object = ip6_api.get_status(&config.name_any()).await?;
+            let mut conditions = object
+                .status
+                .as_ref()
+                .map(|s| s.conditions.clone())
+                .unwrap_or_default();
+            conditions.push(status);
+
+            let mut grouped: BTreeMap<String, Vec<IP6UpdateCondition>> = BTreeMap::new();
+            for cond in conditions {
+                grouped.entry(cond.type_.clone()).or_default().push(cond);
+            }
+
+            let mut trimmed: Vec<IP6UpdateCondition> = grouped
+                .into_iter()
+                .flat_map(|(_, mut group)| {
+                    group.sort_by(|a, b| b.last_transition_time.cmp(&a.last_transition_time));
+                    group.truncate(CONDITION_TYPES_KEEP_HISTORY);
+                    group
+                })
+                .collect();
+
+            trimmed.sort_by(|a, b| b.last_transition_time.cmp(&a.last_transition_time));
+
+            object.status = Some(IP6UpdateStatus {
+                conditions: trimmed,
+            });
+
+            // Patch the status.
+            ip6_api
+                .replace_status(
+                    &config.name_any(),
+                    &Default::default(),
+                    serde_json::to_vec(&object)?,
+                )
+                .await?;
         }
     }
 
