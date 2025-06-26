@@ -1,4 +1,4 @@
-FROM alpine:latest AS builder
+FROM alpine:latest@sha256:8a1f59ffb675680d47db6337b49d22281a139e9d709335b492be023728e11715 AS builder
 COPY --chmod=0755 . /k6u
 RUN apk upgrade && \
     apk add curl clang lld && \
@@ -7,7 +7,7 @@ RUN apk upgrade && \
     cd /k6u && \
     RUSTFLAGS="-C linker=clang -C link-arg=-fuse-ld=lld" cargo build --release
 
-FROM alpine:latest
+FROM alpine:latest@sha256:8a1f59ffb675680d47db6337b49d22281a139e9d709335b492be023728e11715
 RUN apk upgrade --no-cache && \
     apk del --purge apk-tools
 COPY --chown=0:0 --chmod=0755 --from=builder /k6u/target/release/k6u /k6u
