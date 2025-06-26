@@ -364,6 +364,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "derive_more"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "093242cf7570c207c83073cf82f79706fe7b8317e98620a47d5be7c3d8497678"
+dependencies = [
+ "derive_more-impl",
+]
+
+[[package]]
+name = "derive_more-impl"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bda628edc44c4bb645fbe0f758797143e4e07926f7ebf4e9bdfbd3d2ce621df3"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -979,8 +999,8 @@ dependencies = [
  "futures",
  "if-addrs",
  "ipnet",
- "k8s-openapi",
- "kube",
+ "k8s-openapi 0.24.0",
+ "kube 0.99.0",
  "kube-leader-election",
  "log",
  "rand",
@@ -1006,16 +1026,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "k8s-openapi"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aa60a41b57ae1a0a071af77dbcf89fc9819cfe66edaf2beeb204c34459dcf0b2"
+dependencies = [
+ "base64 0.22.1",
+ "chrono",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "kube"
 version = "0.99.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9a4eb20010536b48abe97fec37d23d43069bcbe9686adcf9932202327bc5ca6e"
 dependencies = [
- "k8s-openapi",
- "kube-client",
- "kube-core",
+ "k8s-openapi 0.24.0",
+ "kube-client 0.99.0",
+ "kube-core 0.99.0",
  "kube-derive",
  "kube-runtime",
+]
+
+[[package]]
+name = "kube"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "778f98664beaf4c3c11372721e14310d1ae00f5e2d9aabcf8906c881aa4e9f51"
+dependencies = [
+ "k8s-openapi 0.25.0",
+ "kube-client 1.1.0",
+ "kube-core 1.1.0",
 ]
 
 [[package]]
@@ -1039,10 +1082,44 @@ dependencies = [
  "hyper-timeout",
  "hyper-util",
  "jsonpath-rust",
- "k8s-openapi",
- "kube-core",
+ "k8s-openapi 0.24.0",
+ "kube-core 0.99.0",
  "pem",
  "rustls",
+ "secrecy",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "thiserror 2.0.12",
+ "tokio",
+ "tokio-util",
+ "tower",
+ "tower-http",
+ "tracing",
+]
+
+[[package]]
+name = "kube-client"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7cb276b85b6e94ded00ac8ea2c68fcf4697ea0553cb25fddc35d4a0ab718db8d"
+dependencies = [
+ "base64 0.22.1",
+ "bytes",
+ "chrono",
+ "either",
+ "futures",
+ "home",
+ "http",
+ "http-body",
+ "http-body-util",
+ "hyper",
+ "hyper-timeout",
+ "hyper-util",
+ "jsonpath-rust",
+ "k8s-openapi 0.25.0",
+ "kube-core 1.1.0",
+ "pem",
  "secrecy",
  "serde",
  "serde_json",
@@ -1065,8 +1142,25 @@ dependencies = [
  "form_urlencoded",
  "http",
  "json-patch",
- "k8s-openapi",
+ "k8s-openapi 0.24.0",
  "schemars",
+ "serde",
+ "serde-value",
+ "serde_json",
+ "thiserror 2.0.12",
+]
+
+[[package]]
+name = "kube-core"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3c56ff45deb0031f2a476017eed60c06872251f271b8387ad8020b8fef60960"
+dependencies = [
+ "chrono",
+ "derive_more",
+ "form_urlencoded",
+ "http",
+ "k8s-openapi 0.25.0",
  "serde",
  "serde-value",
  "serde_json",
@@ -1089,13 +1183,13 @@ dependencies = [
 
 [[package]]
 name = "kube-leader-election"
-version = "0.40.0"
+version = "0.41.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "527e943b809de1967bf0ce4fb21b3373b928bbc5114cbe273fe12bbecf68a696"
+checksum = "1136a5235fa784f01cba80f6af4de5aa7796c13bc3b86e59ff77d19dc59e3f6a"
 dependencies = [
  "chrono",
- "k8s-openapi",
- "kube",
+ "k8s-openapi 0.25.0",
+ "kube 1.1.0",
  "log",
  "serde",
  "serde_json",
@@ -1118,8 +1212,8 @@ dependencies = [
  "hashbrown",
  "hostname",
  "json-patch",
- "k8s-openapi",
- "kube-client",
+ "k8s-openapi 0.24.0",
+ "kube-client 0.99.0",
  "parking_lot",
  "pin-project",
  "serde",
