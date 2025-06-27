@@ -1,5 +1,8 @@
 when:
-  - event: push
+  - event:
+      - push
+      - tag
+      - deployment
     branch: master
   - event: cron
     cron: "daily build"
