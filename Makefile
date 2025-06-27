@@ -16,10 +16,28 @@ default: build
 clean:
 	@echo -e $(PREFIX) $@ $(SUFFIX)
 	cd $(CURRENT_DIR); \
-		(podman rmi $(IMAGE_REPO):$(IMAGE_TAG) || true)
+		(podman rmi $(IMAGE_REPO):$(IMAGE_TAG) || true);
+		rm -rf target/
+
+.PHONY: setup
+setup:
+	@echo -e $(PREFIX) $@ $(SUFFIX)
+	export RUSTFLAGS="-C linker=clang -C link-arg=-fuse-ld=lld"
+
+.PHONY: check
+check:
+	@echo -e $(PREFIX) $@ $(SUFFIX)
+	cd $(CURRENT_DIR); \
+		cargo check --release
 
 .PHONY: build
-build: clean
+build: clean setup
+	@echo -e $(PREFIX) $@ $(SUFFIX)
+	cd $(CURRENT_DIR); \
+		cargo build --release
+
+.PHONY: container
+container: clean
 	@echo -e $(PREFIX) $@ $(SUFFIX)
 	cd $(CURRENT_DIR); \
 		buildah bud \
