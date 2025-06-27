@@ -7,7 +7,7 @@ SUFFIX = "$(NO_COLOR)"
 
 CURRENT_DIR = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
-IMAGE_REPO			= registry.fuwafuwatime.moe/concord/k6u
+IMAGE_REPO			= registry.fuwafuwatime.moe/fuwafuwalabs/k6u
 IMAGE_TAG 			= latest
 
 default: build

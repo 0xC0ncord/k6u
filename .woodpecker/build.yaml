@@ -19,7 +19,7 @@ steps:
     image: plugins/kaniko@sha256:7c4263578f972bda45303dae99debf4bb4dfc550cf758658a62c73ea91da68f1
     settings:
       registry: https://registry.fuwafuwatime.moe
-      repo: registry.fuwafuwatime.moe/concord/k6u
+      repo: registry.fuwafuwatime.moe/fuwafuwalabs/k6u
       dockerfile: Containerfile
       tags:
         - latest
