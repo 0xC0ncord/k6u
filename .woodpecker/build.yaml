@@ -11,7 +11,7 @@ steps:
   - when:
       - event: pull_request
     name: build container
-    image: plugins/kaniko@sha256:7c4263578f972bda45303dae99debf4bb4dfc550cf758658a62c73ea91da68f1
+    image: plugins/kaniko@sha256:16a51b2c36ee48531cc28bd0f701d1f67763e129374da7f4c7c60a5cd48efa35
     settings:
       dry-run: true
       dockerfile: Containerfile
@@ -19,7 +19,7 @@ steps:
   - when:
       - evaluate: 'CI_COMMIT_BRANCH == CI_REPO_DEFAULT_BRANCH'
     name: build and publish container
-    image: plugins/kaniko@sha256:7c4263578f972bda45303dae99debf4bb4dfc550cf758658a62c73ea91da68f1
+    image: plugins/kaniko@sha256:16a51b2c36ee48531cc28bd0f701d1f67763e129374da7f4c7c60a5cd48efa35
     settings:
       registry: https://registry.fuwafuwatime.moe
       repo: registry.fuwafuwatime.moe/fuwafuwalabs/k6u
