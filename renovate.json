@@ -4,5 +4,15 @@
     "config:best-practices"
   ],
   "updateLockFiles": true,
-  "platformAutomerge": true
+  "osvVulnerabilityAlerts": true,
+  "semanticCommits": "enabled",
+  "prConcurrentLimit": 20,
+  "platformAutomerge": true,
+  "packageRules": [
+    {
+      "matchDatasources": ["dockerfile", "cargo", "woodpecker"],
+      "matchUpdateTypes": ["minor", "patch", "pinDigest", "digest"],
+      "automerge": true
+    }
+  ]
 }
