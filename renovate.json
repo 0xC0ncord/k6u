@@ -10,7 +10,7 @@
   "platformAutomerge": true,
   "packageRules": [
     {
-      "matchDatasources": ["dockerfile", "cargo", "woodpecker"],
+      "matchDatasources": ["docker", "crate"],
       "matchUpdateTypes": ["minor", "patch", "pinDigest", "digest"],
       "automerge": true
     }
