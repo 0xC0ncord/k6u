@@ -1,32 +1,40 @@
 when:
   - event:
       - push
+      - pull_request
       - tag
-      - deployment
-    branch: master
-  - event: cron
+      - manual
+      - cron
     cron: "daily build"
 
-steps:
-  - when:
-      - event: pull_request
-    name: build container
-    image: plugins/kaniko@sha256:16a51b2c36ee48531cc28bd0f701d1f67763e129374da7f4c7c60a5cd48efa35
-    settings:
-      dry-run: true
-      dockerfile: Containerfile
+variables:
+  - &file Containerfile
+  - &repo fuwafuwalabs/k6u
 
-  - when:
-      - evaluate: 'CI_COMMIT_BRANCH == CI_REPO_DEFAULT_BRANCH'
-    name: build and publish container
-    image: plugins/kaniko@sha256:16a51b2c36ee48531cc28bd0f701d1f67763e129374da7f4c7c60a5cd48efa35
+steps:
+  - name: dry run
+    when:
+      - event: pull_request
+    image: woodpeckerci/plugin-kaniko:1.2.1@sha256:44482e1015728dff1d9e63d5e89f0716efb1fe61af3a2a149757c9d9f318181b
     settings:
-      registry: https://registry.fuwafuwatime.moe
-      repo: registry.fuwafuwatime.moe/fuwafuwalabs/k6u
-      dockerfile: Containerfile
-      tags:
-        - latest
-        - ${CI_COMMIT_TAG:-${CI_COMMIT_SHA:0:8}}
+      dockerfile: *file
+      dry_run: true
+
+  - name: publish container
+    when:
+      - event:
+          - push
+          - tag
+          - cron
+        branch:
+          - ${CI_REPO_DEFAULT_BRANCH}
+    image: woodpeckerci/plugin-kaniko:1.2.1@sha256:44482e1015728dff1d9e63d5e89f0716efb1fe61af3a2a149757c9d9f318181b
+    settings:
+      dockerfile: *file
+      repo: *repo
+      auto_tag: true
+      registry:
+        from_secret: REGISTRY
       username:
         from_secret: REGISTRY_USER
       password:
