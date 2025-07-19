@@ -14,7 +14,12 @@ variables:
 steps:
   - name: dry run
     when:
-      - event: pull_request
+      - event:
+          - pull_request
+      - event:
+          - push
+          - manual
+        evaluate: 'CI_COMMIT_BRANCH != CI_REPO_DEFAULT_BRANCH'
     image: woodpeckerci/plugin-kaniko:1.2.1@sha256:44482e1015728dff1d9e63d5e89f0716efb1fe61af3a2a149757c9d9f318181b
     settings:
       dockerfile: *file
