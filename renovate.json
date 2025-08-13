@@ -3,15 +3,22 @@
   "extends": [
     "config:best-practices"
   ],
-  "updateLockFiles": true,
   "osvVulnerabilityAlerts": true,
   "semanticCommits": "enabled",
   "prConcurrentLimit": 20,
   "platformAutomerge": true,
   "packageRules": [
     {
-      "matchDatasources": ["docker", "crate"],
-      "matchUpdateTypes": ["minor", "patch", "pinDigest", "digest"],
+      "matchDatasources": [
+        "docker",
+        "crate"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pinDigest",
+        "digest"
+      ],
       "automerge": true
     }
   ]
