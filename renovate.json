@@ -3,7 +3,6 @@
   "extends": [
     "config:best-practices"
   ],
-  "updateLockFiles": true,
   "osvVulnerabilityAlerts": true,
   "semanticCommits": "enabled",
   "prConcurrentLimit": 20,
