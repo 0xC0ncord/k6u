@@ -1,4 +1,4 @@
-FROM docker.io/library/rust:1.89.0-alpine@sha256:4b800f2e72e04be908e5f634c504c741bd943b763d1d8ad7b096cc340e1b5b46 AS builder
+FROM docker.io/library/rust:1.91.0-alpine@sha256:a3e3d30122c08c0ed85dcd8867d956f066be23c32ed67a0453bc04ce478ad69b AS builder
 COPY --chmod=0755 . /build
 RUN apk update && \
     apk add clang lld && \
