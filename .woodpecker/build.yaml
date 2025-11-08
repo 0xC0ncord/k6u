@@ -20,7 +20,7 @@ steps:
           - push
           - manual
         evaluate: 'CI_COMMIT_BRANCH != CI_REPO_DEFAULT_BRANCH'
-    image: woodpeckerci/plugin-kaniko:2.1.0@sha256:6755b0ded337c03767e6b51c34a6eeb6cd2c1af5a8ce58098d5febd6c3163446
+    image: woodpeckerci/plugin-kaniko:2.1.1@sha256:dcd858c17b23c9429887ad509ad32cc450e7e44051a1b1885af6ea6acef34abb
     settings:
       dockerfile: *file
       dry_run: true
@@ -33,7 +33,7 @@ steps:
           - cron
         branch:
           - ${CI_REPO_DEFAULT_BRANCH}
-    image: woodpeckerci/plugin-kaniko:2.1.0@sha256:6755b0ded337c03767e6b51c34a6eeb6cd2c1af5a8ce58098d5febd6c3163446
+    image: woodpeckerci/plugin-kaniko:2.1.1@sha256:dcd858c17b23c9429887ad509ad32cc450e7e44051a1b1885af6ea6acef34abb
     settings:
       dockerfile: *file
       repo: *repo
