@@ -15,7 +15,7 @@ kube = { version = "2.0.*", features = ["runtime", "derive", "jsonpatch"] }
 kube-leader-election = "0.42.0"
 log = "0.4.x"
 rand = "0.9.x"
-schemars = "1.1.*"
+schemars = "1.2.*"
 serde = "1.0.x"
 serde_json = "1.0.x"
 signal-hook = "0.3.x"
