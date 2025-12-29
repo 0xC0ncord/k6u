@@ -7,6 +7,9 @@ steps:
     when:
       - event:
           - pull_request
+      - event:
+          - manual
+        evaluate: 'CI_COMMIT_BRANCH != CI_REPO_DEFAULT_BRANCH'
     image: woodpeckerci/plugin-kaniko:2.2.0@sha256:a621a2576ffe3b15d7aff09d640b6f77c9849e5914c263f6f99a656d0a45e22c
     settings:
       dockerfile: *file
@@ -18,6 +21,7 @@ steps:
           - push
           - tag
           - cron
+          - manual
         branch:
           - ${CI_REPO_DEFAULT_BRANCH}
     image: woodpeckerci/plugin-kaniko:2.2.0@sha256:a621a2576ffe3b15d7aff09d640b6f77c9849e5914c263f6f99a656d0a45e22c
