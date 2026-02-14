@@ -10,7 +10,7 @@ steps:
       - event:
           - manual
         evaluate: 'CI_COMMIT_BRANCH != CI_REPO_DEFAULT_BRANCH'
-    image: woodpeckerci/plugin-kaniko:2.2.2@sha256:46ad33f2e0538b9a2046e33d39cee226ace2604c587d87493bceb192e4bd2c44
+    image: woodpeckerci/plugin-kaniko:2.3.0@sha256:b88802ba66af95ee28a8ffde08715631ec2892e024b2c74e90e19f73a5c2c602
     settings:
       dockerfile: *file
       dry_run: true
@@ -24,7 +24,7 @@ steps:
           - manual
         branch:
           - ${CI_REPO_DEFAULT_BRANCH}
-    image: woodpeckerci/plugin-kaniko:2.2.2@sha256:46ad33f2e0538b9a2046e33d39cee226ace2604c587d87493bceb192e4bd2c44
+    image: woodpeckerci/plugin-kaniko:2.3.0@sha256:b88802ba66af95ee28a8ffde08715631ec2892e024b2c74e90e19f73a5c2c602
     settings:
       dockerfile: *file
       repo: *repo
