@@ -9,7 +9,7 @@ use kube::{
     core::{ApiResource, CustomResourceExt, DynamicObject, GroupVersionKind},
     runtime::wait::{await_condition, conditions},
 };
-use kube_leader_election::{LeaseLock, LeaseLockParams};
+use kube_leader_election::{LeaseLock, LeaseLockParams, LeaseLockResult};
 use rand::prelude::*;
 use signal_hook::consts::signal::{SIGINT, SIGTERM};
 use signal_hook_tokio::Signals;
@@ -159,7 +159,7 @@ async fn run() -> Result<()> {
                 match leadership.try_acquire_or_renew().await {
                     Ok(ll) => {
                         // We are the leader, try and update.
-                        is_leader.store(ll.acquired_lease, Ordering::Relaxed);
+                        is_leader.store(matches!(ll, LeaseLockResult::Acquired(_)), Ordering::Relaxed);
                         if is_leader.load(Ordering::Relaxed) {
                             if let Err(e) = try_update_ipv6_prefixes(
                                 &client,
@@ -265,7 +265,7 @@ async fn try_update_ipv6_prefixes(
                 Ok(_) => {
                     log::info!("Patching CiliumCIDRGroup {group} completed successfully.");
                     IP6UpdateCondition {
-                        last_transition_time: Time(chrono::Utc::now()),
+                        last_transition_time: Time(jiff::Timestamp::now()),
                         message: format!(
                             "Updated IPv6 address in {} from {:?} to {:?}",
                             group, existing_cidrs, new_prefixes,
@@ -278,7 +278,7 @@ async fn try_update_ipv6_prefixes(
                 Err(e) => {
                     log::info!("Failed to patch CiliumCIDRGroup {group}.");
                     IP6UpdateCondition {
-                        last_transition_time: Time(chrono::Utc::now()),
+                        last_transition_time: Time(jiff::Timestamp::now()),
                         message: format!(
                             "Failed to update IPv6 address in {} from {:?} to {:?}: {}",
                             group, existing_cidrs, new_prefixes, e,
@@ -326,7 +326,7 @@ async fn try_update_ipv6_prefixes(
                 .replace_status(
                     &config.name_any(),
                     &Default::default(),
-                    serde_json::to_vec(&object)?,
+                    &object,
                 )
                 .await?;
         }
