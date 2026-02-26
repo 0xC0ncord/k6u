@@ -905,7 +905,7 @@ dependencies = [
 
 [[package]]
 name = "k6u"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "env_logger",
