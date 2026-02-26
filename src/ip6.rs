@@ -15,8 +15,8 @@ pub fn get_global_ipv6_prefix_from_interface(
     let ifaces = if_addrs::get_if_addrs().context("Failed to read network interfaces!")?;
 
     for iface_addr in ifaces {
-        if iface_addr.name == interface_name {
-            if let if_addrs::IfAddr::V6(addr) = iface_addr.addr {
+        if iface_addr.name == interface_name
+            && let if_addrs::IfAddr::V6(addr) = iface_addr.addr {
                 let ip = addr.ip;
                 if !(ip.is_loopback()
                     || ip.is_unspecified()
@@ -29,7 +29,6 @@ pub fn get_global_ipv6_prefix_from_interface(
                     ));
                 }
             }
-        }
     }
 
     Err(anyhow!(

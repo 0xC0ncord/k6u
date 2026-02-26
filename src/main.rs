@@ -160,8 +160,8 @@ async fn run() -> Result<()> {
                     Ok(ll) => {
                         // We are the leader, try and update.
                         is_leader.store(matches!(ll, LeaseLockResult::Acquired(_)), Ordering::Relaxed);
-                        if is_leader.load(Ordering::Relaxed) {
-                            if let Err(e) = try_update_ipv6_prefixes(
+                        if is_leader.load(Ordering::Relaxed)
+                            && let Err(e) = try_update_ipv6_prefixes(
                                 &client,
                                 &config_api,
                                 &cidr_api,
@@ -169,7 +169,6 @@ async fn run() -> Result<()> {
                             ).await {
                                 log::error!("{}", e);
                             }
-                        }
                     }
                     Err(e) => {
                         log::error!("{:?}", e);
@@ -323,11 +322,7 @@ async fn try_update_ipv6_prefixes(
 
             // Patch the status.
             ip6_api
-                .replace_status(
-                    &config.name_any(),
-                    &Default::default(),
-                    &object,
-                )
+                .replace_status(&config.name_any(), &Default::default(), &object)
                 .await?;
         }
     }
