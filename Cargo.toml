@@ -11,7 +11,7 @@ if-addrs = "0.15.x"
 ipnet = "2.12.x"
 jiff = "0.2.x"
 k8s-openapi = { version = "0.27.0", features = ["v1_34"] }
-kube = { version = "3.0.*", features = ["runtime", "derive", "jsonpatch"] }
+kube = { version = "3.1.*", features = ["runtime", "derive", "jsonpatch"] }
 kube-leader-election = "0.43.0"
 log = "0.4.x"
 rand = "0.10.x"
