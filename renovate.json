@@ -10,7 +10,7 @@
   "packageRules": [
     {
       "matchDatasources": ["docker", "crate"],
-      "matchUpdateTypes": ["minor", "patch", "pinDigest", "digest"],
+      "matchUpdateTypes": ["minor", "patch", "pinDigest", "digest", "lockFileMaintenance"],
       "automerge": true
     }
   ]
