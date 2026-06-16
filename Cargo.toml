@@ -12,7 +12,7 @@ ipnet = "2.12.x"
 jiff = "0.2.x"
 k8s-openapi = { version = "0.28.0", features = ["v1_34"] }
 kube = { version = "3.1.*", features = ["runtime", "derive", "jsonpatch"] }
-kube-leader-election = "0.43.0"
+kube-leader-election = "0.44.0"
 log = "0.4.x"
 rand = "0.10.x"
 schemars = "1.2.*"
