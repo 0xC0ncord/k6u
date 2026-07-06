@@ -7,10 +7,14 @@
   "semanticCommits": "enabled",
   "prConcurrentLimit": 20,
   "platformAutomerge": true,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true
+  },
   "packageRules": [
     {
       "matchDatasources": ["docker", "crate"],
-      "matchUpdateTypes": ["minor", "patch", "pinDigest", "digest", "lockFileMaintenance"],
+      "matchUpdateTypes": ["minor", "patch", "pinDigest", "digest"],
       "automerge": true
     }
   ]
